@@ -384,7 +384,7 @@ export default function Quiz() {
             <!-- Header layout -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid transparent; padding-bottom: 24px; margin-bottom: 32px;">
                 <div style="flex: 1;">
-                    <img src="${window.location.origin}/images/logo.6712b347ef6bfbe8b880.png" style="height: 48px; object-fit: contain;" alt="Smmart Logo"/>
+                    <img src="${window.location.origin}/images/logo.6712b347ef6bfbe8b880.png" style="height: 48px; object-fit: contain;" alt="smmart Logo"/>
                 </div>
                 <div style="flex: 2; text-align: center;">
                     <h1 style="font-size: 24px; font-weight: 800; color: #111; margin: 0;">${lessonName}</h1>
@@ -398,7 +398,7 @@ export default function Quiz() {
 
             <!-- Score Banner -->
             <div style="background-color: #f0f4ff; border: 1.5px solid #a5b4fc; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-                <h2 style="font-size: 28px; font-weight: 600; color: #4f46e5; margin: 0 0 8px 0;">Total Score: ${score * 10}</h2>
+                <h2 style="font-size: 28px; font-weight: 600; color: #4f46e5; margin: 0 0 8px 0;">Score: ${score} / ${total}</h2>
                 <p style="font-size: 20px; font-weight: 700; color: #374151; margin: 0;">${pct >= 80 ? 'The journey of transformation has started' : 'Keep demanding excellence from yourself!'}</p>
             </div>
 
@@ -712,7 +712,7 @@ export default function Quiz() {
                                     <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', alignSelf: 'flex-end', marginBottom: '4px' }}>/{total}</span>
                                 </div>
                             </div>
-                            <p style={{ color: '#c4b5fd', fontWeight: 600, margin: 0, fontSize: '1rem' }}>{pct}% {t.yourScore}</p>
+                            <p style={{ color: '#c4b5fd', fontWeight: 600, margin: 0, fontSize: '1.1rem' }}>{score} / {total} Correct</p>
 
                             {/* Action buttons */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%', marginTop: '0.75rem' }}>

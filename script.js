@@ -11,7 +11,7 @@ const state = {
     customLessonNames: [],
     customQuestions: [], // Store dynamic questions for the active lesson
     settings: {
-        eventName: "Smmart - Incharge vs Incontrol",
+        eventName: "smmart - Incharge vs Incontrol",
         pointsPerQuestion: 10,
         passingScore: 8
     }

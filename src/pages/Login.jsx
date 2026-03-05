@@ -87,8 +87,8 @@ export default function Login() {
                 <div style={{ width: '100%', maxWidth: '440px', position: 'relative', zIndex: 1 }}>
                     {/* Logo */}
                     <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                        <img src={logoImg} alt="Smmart Logo" style={{ height: '56px', objectFit: 'contain', marginBottom: '0.75rem' }} />
-                        <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, background: 'linear-gradient(135deg,#818cf8,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SmmartQuiz</h1>
+                        <img src={logoImg} alt="smmart Logo" style={{ height: '56px', objectFit: 'contain', marginBottom: '0.75rem' }} />
+                        <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, background: 'linear-gradient(135deg,#818cf8,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>smmartQuiz</h1>
                         <p style={{ margin: '0.4rem 0 0', color: '#64748b', fontSize: '0.9rem' }}>Test your knowledge. Grow your potential.</p>
                     </div>
 

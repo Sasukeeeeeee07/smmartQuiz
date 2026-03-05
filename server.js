@@ -129,7 +129,7 @@ const QuizContent = mongoose.model('QuizContent', quizContentSchema);
 
 // Define Mongoose Schema & Model for Global Settings
 const globalSettingsSchema = new mongoose.Schema({
-    eventName: { type: String, default: "Smmart - Incharge vs Incontrol" },
+    eventName: { type: String, default: "smmart - Incharge vs Incontrol" },
     pointsPerQuestion: { type: Number, default: 10 },
     passingScore: { type: Number, default: 8 },
     adminPassword: { type: String, default: DEFAULT_ADMIN_PASS }
@@ -160,7 +160,7 @@ const quizConfigSchema = new mongoose.Schema({
     }],
     scoringRules: { type: Array, default: [] },
     settings: {
-        eventName: { type: String, default: "Smmart - Incharge vs Incontrol" },
+        eventName: { type: String, default: "smmart - Incharge vs Incontrol" },
         sessionName: { type: String, default: "" },
         logoUrl: { type: String, default: "" },
         showLogo: { type: Boolean, default: true },
@@ -538,7 +538,7 @@ app.get('/api/settings', async (req, res) => {
     try {
         if (!isDbConnected) {
             return res.status(200).json({
-                eventName: "Smmart - Incharge vs Incontrol",
+                eventName: "smmart - Incharge vs Incontrol",
                 pointsPerQuestion: 10,
                 passingScore: 8
             });
@@ -600,7 +600,7 @@ app.get('/api/all-data', async (req, res) => {
                 questions: [],
                 scoringRules: [],
                 settings: {
-                    eventName: "Smmart - Incharge vs Incontrol",
+                    eventName: "smmart - Incharge vs Incontrol",
                     languages: [
                         { code: 'en', name: 'English', active: true },
                         { code: 'hi', name: 'Hindi', active: true }

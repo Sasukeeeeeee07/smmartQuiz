@@ -94,7 +94,7 @@ function LoginScreen({ onLogin }) {
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div>
                     <h1 style={{ ...S.h1, fontSize: '2rem', textAlign: 'center', display: 'block', WebkitTextFillColor: 'transparent' }}>Admin Panel</h1>
-                    <p style={{ color: '#64748b', marginTop: '0.5rem' }}>SmmartQuiz Management Dashboard</p>
+                    <p style={{ color: '#64748b', marginTop: '0.5rem' }}>smmartQuiz Management Dashboard</p>
                 </div>
                 <form onSubmit={handleLogin} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div>
@@ -125,7 +125,7 @@ function Sidebar({ activeTab, setActiveTab, onLogout, onViewQuiz }) {
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img src={logoImg} alt="Logo" style={{ height: '24px', objectFit: 'contain' }} />
-                        <div style={S.h1}>SmmartQuiz</div>
+                        <div style={S.h1}>smmartQuiz</div>
                     </div>
                     <div className="admin-sub" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Admin Dashboard</div>
                 </div>
@@ -631,7 +631,7 @@ function SettingsTab({ password, showToast }) {
                 <button onClick={handleSave} disabled={saving} style={S.btnPrimary}>{saving ? 'Saving...' : '💾 Save Settings'}</button>
             </div>
             <div style={{ ...S.card, maxWidth: '560px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {[{ key: 'eventName', label: 'Event Name', type: 'text', placeholder: 'Smmart - Incharge vs Incontrol' }, { key: 'pointsPerQuestion', label: 'Points Per Question', type: 'number', placeholder: '10' }, { key: 'passingScore', label: 'Passing Score (out of 10)', type: 'number', placeholder: '8' }, { key: 'newAdminPassword', label: 'Change Admin Password', type: 'password', placeholder: 'Leave blank to keep current' }].map(f => (
+                {[{ key: 'eventName', label: 'Event Name', type: 'text', placeholder: 'smmart - Incharge vs Incontrol' }, { key: 'pointsPerQuestion', label: 'Points Per Question', type: 'number', placeholder: '10' }, { key: 'passingScore', label: 'Passing Score (out of 10)', type: 'number', placeholder: '8' }, { key: 'newAdminPassword', label: 'Change Admin Password', type: 'password', placeholder: 'Leave blank to keep current' }].map(f => (
                     <div key={f.key}>
                         <label style={S.label}>{f.label}</label>
                         <input type={f.type} value={form[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder} style={S.input} />
