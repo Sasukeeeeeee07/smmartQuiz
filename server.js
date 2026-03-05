@@ -14,6 +14,7 @@ const log = (msg) => {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DEFAULT_ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
@@ -72,6 +73,19 @@ const scoreSchema = new mongoose.Schema({
 });
 const Score = mongoose.model('Score', scoreSchema);
 
+// Define Mongoose Schema & Model for Progress Tracking
+const progressSchema = new mongoose.Schema({
+    email: { type: String, required: true },
+    lessonId: { type: Number, required: true },
+    language: { type: String, required: true },
+    qIndex: { type: Number, default: 0 },
+    score: { type: Number, default: 0 },
+    answers: { type: Array, default: [] },
+    updatedAt: { type: Date, default: Date.now }
+});
+progressSchema.index({ email: 1, lessonId: 1, language: 1 }, { unique: true });
+const Progress = mongoose.model('Progress', progressSchema);
+
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -115,10 +129,20 @@ const globalSettingsSchema = new mongoose.Schema({
     eventName: { type: String, default: "Smmart - Incharge vs Incontrol" },
     pointsPerQuestion: { type: Number, default: 10 },
     passingScore: { type: Number, default: 8 },
-    adminPassword: { type: String, default: 'admin123' }
+    adminPassword: { type: String, default: DEFAULT_ADMIN_PASS }
 });
 
 const GlobalSettings = mongoose.model('GlobalSettings', globalSettingsSchema);
+
+// Define Mongoose Schema & Model for Language Config
+const languageConfigSchema = new mongoose.Schema({
+    languages: [{
+        code: { type: String, required: true },
+        name: { type: String, required: true },
+        active: { type: Boolean, default: true }
+    }]
+});
+const LanguageConfig = mongoose.model('LanguageConfig', languageConfigSchema);
 
 // --- NEW REACT-COMPATIBLE SCHEMA ---
 const quizConfigSchema = new mongoose.Schema({
@@ -168,7 +192,37 @@ const QuizConfig = mongoose.model('QuizConfig', quizConfigSchema);
 // API Routes
 // ==========================================
 
-// 1. User Login Route
+// 1. User Register Route
+app.post('/api/register', async (req, res) => {
+    try {
+        if (!isDbConnected) {
+            return res.status(503).json({ error: 'Database is not connected. Registration disabled.' });
+        }
+
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email and password are required.' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+        }
+
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(409).json({ error: 'An account with this email already exists.' });
+        }
+
+        const user = new User({ name, email, password });
+        await user.save();
+
+        res.status(201).json({ message: 'Account created successfully!', name: user.name, email: user.email });
+    } catch (error) {
+        console.error('Register error:', error);
+        res.status(500).json({ error: 'Registration failed' });
+    }
+});
+
+// 2. User Login Route
 app.post('/api/login', async (req, res) => {
     try {
         if (!isDbConnected) {
@@ -180,25 +234,21 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Missing email or password' });
         }
 
-        let user = await User.findOne({ email });
-
-        if (user) {
-            // Check password
-            if (user.password !== password) {
-                return res.status(401).json({ error: 'Incorrect password.' });
-            }
-        } else {
-            // User not found, automatically register them (for demonstration)
-            user = new User({ email, password, name: email.split('@')[0] });
-            await user.save();
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'No account found with this email. Please sign up first.' });
+        }
+        if (user.password !== password) {
+            return res.status(401).json({ error: 'Incorrect password. Please try again.' });
         }
 
         res.status(200).json({ message: 'Login successful', name: user.name, email: user.email });
     } catch (error) {
-        console.error('Login/Register error:', error);
-        res.status(500).json({ error: 'Authentication failed' });
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Login failed' });
     }
 });
+
 
 // 2. Save Score Route
 app.post('/api/scores', async (req, res) => {
@@ -236,8 +286,72 @@ app.get('/api/scores/:email', async (req, res) => {
     }
 });
 
+// 3b. Progress Routes (Resuming Quiz)
+app.get('/api/progress/:email/latest', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected' });
+        const progress = await Progress.findOne({ email: req.params.email }).sort({ updatedAt: -1 });
+        res.status(200).json(progress || null);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+app.get('/api/progress/:email/:language/:lessonId', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected' });
+        const { email, language, lessonId } = req.params;
+        const progress = await Progress.findOne({ email, language, lessonId: Number(lessonId) });
+        res.status(200).json(progress || { qIndex: 0, score: 0, answers: [] });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch progress' });
+    }
+});
+
+app.post('/api/progress', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected' });
+        const { email, language, lessonId, qIndex, score, answers } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email required' });
+
+        await Progress.findOneAndUpdate(
+            { email, language, lessonId: Number(lessonId) },
+            { qIndex, score, answers, updatedAt: Date.now() },
+            { upsert: true, new: true }
+        );
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Save progress error:', error);
+        res.status(500).json({ error: 'Failed to save progress' });
+    }
+});
+
+app.delete('/api/progress/:email/:language/:lessonId', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected' });
+        const { email, language, lessonId } = req.params;
+        await Progress.deleteOne({ email, language, lessonId: Number(lessonId) });
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to clear progress' });
+    }
+});
+
+// Helper to check admin password against DB configuration or env fallback
+const verifyAdminPassword = async (provided) => {
+    if (!provided) return false;
+    const trimmed = provided.trim();
+    try {
+        const settings = await GlobalSettings.findOne();
+        const currentPass = (settings && settings.adminPassword) ? settings.adminPassword : DEFAULT_ADMIN_PASS;
+        return trimmed === currentPass;
+    } catch (err) {
+        console.error(`Auth verification error: ${err.message}`);
+        return trimmed === DEFAULT_ADMIN_PASS;
+    }
+};
+
 // 4. Admin Scores Route (Protected)
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 app.get('/api/admin/scores', async (req, res) => {
     try {
         if (!isDbConnected) {
@@ -248,7 +362,7 @@ app.get('/api/admin/scores', async (req, res) => {
         // Normally this would be a secure token, but keeping it simple as requested
         const providedPassword = req.query.password || req.headers.authorization?.split(' ')[1];
 
-        if (providedPassword !== ADMIN_PASSWORD) {
+        if (!(await verifyAdminPassword(providedPassword))) {
             return res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
         }
 
@@ -258,6 +372,54 @@ app.get('/api/admin/scores', async (req, res) => {
     } catch (error) {
         console.error('Error fetching all scores for admin:', error);
         res.status(500).json({ error: 'Failed to fetch all scores' });
+    }
+});
+
+// 4b. Get Available Languages (Public)
+app.get('/api/languages', async (req, res) => {
+    try {
+        const DEFAULT_LANGS = [
+            { code: 'en', name: 'English', active: true },
+            { code: 'hi', name: 'Hindi', active: true }
+        ];
+        if (!isDbConnected) return res.status(200).json(DEFAULT_LANGS);
+
+        let config = await LanguageConfig.findOne();
+        if (!config) {
+            config = new LanguageConfig({ languages: DEFAULT_LANGS });
+            await config.save();
+        }
+        res.status(200).json(config.languages);
+    } catch (error) {
+        console.error('Error fetching languages:', error);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// 4c. Update Available Languages (Admin Protected)
+app.post('/api/admin/languages', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database not connected.' });
+
+        const providedPassword = req.query.password || req.headers.authorization?.split(' ')[1];
+        if (!(await verifyAdminPassword(providedPassword))) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { languages } = req.body;
+        if (!Array.isArray(languages) || languages.length === 0) {
+            return res.status(400).json({ error: 'Must provide at least one language.' });
+        }
+
+        let config = await LanguageConfig.findOne();
+        if (!config) config = new LanguageConfig();
+        config.languages = languages;
+        await config.save();
+
+        res.status(200).json({ message: 'Languages updated successfully!' });
+    } catch (error) {
+        console.error('Error updating languages:', error);
+        res.status(500).json({ error: 'Update failed' });
     }
 });
 
@@ -289,7 +451,7 @@ app.post('/api/admin/lessons', async (req, res) => {
         }
 
         const providedPassword = req.query.password || req.headers.authorization?.split(' ')[1];
-        if (providedPassword !== ADMIN_PASSWORD) {
+        if (!(await verifyAdminPassword(providedPassword))) {
             return res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
         }
 
@@ -335,20 +497,20 @@ app.post('/api/admin/quiz-content', async (req, res) => {
         }
 
         const providedPassword = req.query.password || req.headers.authorization?.split(' ')[1];
-        if (providedPassword !== ADMIN_PASSWORD) {
+        if (!(await verifyAdminPassword(providedPassword))) {
             return res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
         }
 
         const { language, lessonId, questions } = req.body;
 
-        if (!language || typeof lessonId !== 'number' || !Array.isArray(questions) || questions.length !== 10) {
-            return res.status(400).json({ error: 'Invalid payload. Must provide language, lessonId, and exactly 10 questions.' });
+        if (!language || typeof lessonId !== 'number' || !Array.isArray(questions) || questions.length < 1) {
+            return res.status(400).json({ error: 'Invalid payload. Must provide language, lessonId, and at least 1 question.' });
         }
 
         // Validate structure of questions roughly
         for (let q of questions) {
-            if (!q.text || !Array.isArray(q.options) || q.options.length !== 4 || typeof q.correctIndex !== 'number') {
-                return res.status(400).json({ error: 'Invalid question format.' });
+            if (!q.text || !Array.isArray(q.options) || q.options.length < 2 || typeof q.correctIndex !== 'number') {
+                return res.status(400).json({ error: 'Invalid question format. Each question needs text, at least 2 options, and a correctIndex.' });
             }
         }
 
@@ -406,8 +568,7 @@ app.post('/api/admin/settings', async (req, res) => {
         }
 
         // Auth check against dynamic password in DB, or env fallback
-        const currentAdminPass = settings.adminPassword || process.env.ADMIN_PASSWORD || 'admin123';
-        if (providedPassword !== currentAdminPass) {
+        if (!(await verifyAdminPassword(providedPassword))) {
             return res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
         }
 

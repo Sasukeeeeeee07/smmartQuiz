@@ -924,3 +924,216 @@ body {
 .lesson-id-2 .back-btn {
     color: #ffffff !important;
 }
+
+/* ══════════════════════════════════════
+   TRANSPARENT BG-IMAGE SCREENS
+   (lessons-screen-transparent, quiz-screen-transparent, result-screen-transparent)
+   Mobile: fully transparent so the fixed bg shows through
+   Desktop (≥480px): centred frosted-glass card
+══════════════════════════════════════ */
+
+.lessons-screen-transparent,
+.quiz-screen-transparent,
+.result-screen-transparent {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    /* fully transparent on mobile */
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+}
+
+@media (min-width: 480px) {
+
+    .lessons-screen-transparent,
+    .quiz-screen-transparent,
+    .result-screen-transparent {
+        max-width: 560px;
+        min-height: 85vh;
+        max-height: 95vh;
+        border-radius: 36px;
+        background: rgba(15, 15, 26, 0.45);
+        /* faint dark glass on desktop */
+        backdrop-filter: blur(14px);
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), 0 0 0 1.5px rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* ── Light glass header (lessons screen over BG) ── */
+.lessons-header-glass {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.4rem 1.25rem 1rem;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* ── Light text variants ── */
+.lessons-title-light {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.lessons-sub-light {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 2px;
+}
+
+.lesson-name-light {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.lesson-count-light {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
+.lesson-chevron-light {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 300;
+}
+
+/* ── Glass lesson card items ── */
+.lesson-item-glass {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    transition: all 0.22s ease;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+}
+
+.lesson-item-glass:hover,
+.lesson-item-glass:active {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Back button light variant ── */
+.back-btn-light {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.back-btn-light:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Quiz top bar glass ── */
+.quiz-top-bar-glass {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.1rem 1.25rem 0.9rem;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.quiz-lesson-title-light {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.quiz-count-light {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+}
+
+/* ── Progress bar over BG image ── */
+.quiz-progress-wrap-glass {
+    padding: 0 1.25rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+/* ── Result screen transparent ── */
+.result-screen-transparent {
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 480px) {
+    .result-screen-transparent {
+        background: rgba(15, 15, 26, 0.55);
+    }
+}
+
+/* Desktop Center Container */
+.desktop-quiz-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+    position: relative;
+    background: transparent;
+}
+
+@media (min-width: 768px) {
+    .desktop-quiz-container-wrapper {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .desktop-quiz-container {
+        max-width: 560px;
+        min-height: auto;
+        height: 85vh;
+        max-height: 850px;
+        border-radius: 32px;
+        background: transparent;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+    }
+}
