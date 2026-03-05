@@ -10,17 +10,17 @@ import logoImg from './logo.6712b347ef6bfbe8b880.png';
 const NUM_LESSONS = 9;
 const API = '/api';
 
-// L1–L9 background images (files in project root served by Express)
+// L1–L9 background images (files in public/images/ folder)
 const LESSON_IMAGES = {
-    1: '/L1.jpg',
-    2: '/L2.jpeg',
-    3: '/L3.jpeg',
-    4: '/L4.jpg',
-    5: '/L5.jpg',
-    6: '/L6.jpeg',
-    7: '/L7.jpg',
-    8: '/L8.jpg',
-    9: '/L9.jpeg',
+    1: '/images/L1.jpg',
+    2: '/images/L2.jpeg',
+    3: '/images/L3.jpeg',
+    4: '/images/L4.jpg',
+    5: '/images/L5.jpg',
+    6: '/images/L6.jpeg',
+    7: '/images/L7.jpg',
+    8: '/images/L8.jpg',
+    9: '/images/L9.jpeg',
 };
 
 // UI strings keyed by language code
@@ -35,6 +35,21 @@ const UI_EN = {
     noQuestions: "No questions available", noQuestionsMsg: "The admin hasn't added questions yet.",
     loading: "Loading...", loggedInAs: "Logged in as", logout: "Logout",
 };
+
+const LESSON_NAMES_EN = [
+    "Giving Up Control", "Growing Your Ambition", "Multiplying Your Present",
+    "Expanding Your Capability", "Multiplying and Expanding Your Teamwork",
+    "Know the Ambitions of Your Team", "Ambition Requires Certainty",
+    "Growing Your Ambition – 6 Year Architecture", "Growing Ambitions with Journey Partners"
+];
+
+const LESSON_NAMES_HI = [
+    "नियंत्रण छोड़ना", "अपनी महत्वाकांक्षा को बढ़ाना", "अपने वर्तमान को गुणा करना",
+    "अपनी क्षमता का विस्तार करना", "अपनी टीमवर्क को गुणा और विस्तारित करना",
+    "अपनी टीम की महत्वाकांक्षाओं को जानें", "महत्वाकांक्षा के लिए निश्चितता आवश्यक है",
+    "अपनी महत्वाकांक्षा को बढ़ाना – 6 वर्ष की संरचना", "यात्रा साथियों के साथ महत्वाकांक्षा बढ़ाना"
+];
+
 const UI = {
     en: { ...UI_EN },
     hi: {
@@ -129,19 +144,26 @@ export default function Quiz() {
 
     // ── Fetch questions for the chosen language ──
     const fetchLessons = useCallback(async (language, autoSelectId = null) => {
+        // 1. Immediately update names from hardcoded constants (INSTANT)
+        const names = language === 'hi' ? LESSON_NAMES_HI : LESSON_NAMES_EN;
+        setLessonNames(names);
+
+        // 2. Pre-initialize lessons so the UI doesn't show "Loading..."
+        const initialLessons = Array.from({ length: NUM_LESSONS }, (_, i) => ({
+            id: i + 1,
+            name: names[i] || `Lesson ${i + 1}`,
+            questions: [],
+        }));
+        setLessons(initialLessons);
+
+        // 3. Fetch questions in the background
         setLoadingLessons(true);
         try {
-            // Fetch localized lesson names
-            const lRes = await fetch(`${API}/lessons?lang=${language}`);
-            const names = await lRes.json();
-            if (Array.isArray(names)) setLessonNames(names);
-
             const res = await fetch(`${API}/quiz-content/${language}`);
             const content = await res.json();
 
-            const built = Array.from({ length: NUM_LESSONS }, (_, i) => {
-                const lessonNum = i + 1;
-                const dbLesson = content.find(c => c.lessonId === lessonNum);
+            const built = initialLessons.map((lesson) => {
+                const dbLesson = content.find(c => c.lessonId === lesson.id);
                 const rawQs = dbLesson?.questions || [];
                 const questions = rawQs.map(q => ({
                     text: q.text,
@@ -151,11 +173,7 @@ export default function Quiz() {
                     })),
                 }));
 
-                return {
-                    id: lessonNum,
-                    name: lessonNames[i] || `Lesson ${lessonNum}`,
-                    questions,
-                };
+                return { ...lesson, questions };
             });
 
             setLessons(built);
@@ -511,48 +529,43 @@ export default function Quiz() {
                 </div>
 
                 {/* Lesson cards */}
-                {loadingLessons ? (
-                    <div style={{ textAlign: 'center', padding: '4rem', color: 'rgba(255,255,255,0.7)' }}>
-                        <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>⏳</div>
-                        <p>{t.loading}</p>
-                    </div>
-                ) : (
-                    <div style={{ padding: '1rem 1.25rem 2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: '540px', alignSelf: 'center', boxSizing: 'border-box' }}>
-                        {lessons.map((lesson) => {
-                            const hasQ = lesson.questions.length > 0;
-                            return (
-                                <button key={lesson.id} onClick={() => startLesson(lesson)} disabled={!hasQ} style={{
-                                    display: 'flex', alignItems: 'center', gap: '1rem',
-                                    padding: '0.85rem 1rem',
-                                    background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)',
-                                    border: '1px solid rgba(255,255,255,0.2)', borderRadius: '18px',
-                                    cursor: hasQ ? 'pointer' : 'not-allowed', textAlign: 'left',
-                                    width: '100%', opacity: hasQ ? 1 : 0.45,
-                                    transition: 'all 0.22s ease', boxSizing: 'border-box',
+                <div style={{ padding: '1rem 1.25rem 2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: '540px', alignSelf: 'center', boxSizing: 'border-box' }}>
+                    {lessons.map((lesson) => {
+                        const hasQ = lesson.questions.length > 0;
+                        const isSyncing = loadingLessons && !hasQ;
+
+                        return (
+                            <button key={lesson.id} onClick={() => startLesson(lesson)} disabled={!hasQ} style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem',
+                                padding: '0.85rem 1rem',
+                                background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)',
+                                border: '1px solid rgba(255,255,255,0.2)', borderRadius: '18px',
+                                cursor: hasQ ? 'pointer' : 'not-allowed', textAlign: 'left',
+                                width: '100%', opacity: hasQ ? 1 : 0.45,
+                                transition: 'all 0.22s ease', boxSizing: 'border-box',
+                            }}>
+                                {/* L-number thumbnail (instead of emoji/image) */}
+                                <div style={{
+                                    width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
+                                    background: 'rgba(255,255,255,0.15)',
+                                    border: '1.5px solid rgba(255,255,255,0.25)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '1.4rem', fontWeight: 800, color: '#fff',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                                 }}>
-                                    {/* L-number thumbnail (instead of emoji/image) */}
-                                    <div style={{
-                                        width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
-                                        background: 'rgba(255,255,255,0.15)',
-                                        border: '1.5px solid rgba(255,255,255,0.25)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '1.4rem', fontWeight: 800, color: '#fff',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                                    }}>
-                                        {lesson.id}
+                                    {lesson.id}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{lesson.name}</div>
+                                    <div style={{ fontSize: '0.78rem', color: isSyncing ? 'rgba(255,255,255,0.45)' : (hasQ ? 'rgba(255,255,255,0.65)' : 'rgba(255,120,120,0.9)') }}>
+                                        {isSyncing ? "Syncing..." : (hasQ ? `${lesson.questions.length} ${t.questions}` : t.noQuestions)}
                                     </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', marginBottom: '2px' }}>{lesson.name}</div>
-                                        <div style={{ fontSize: '0.78rem', color: hasQ ? 'rgba(255,255,255,0.65)' : 'rgba(255,120,120,0.9)' }}>
-                                            {hasQ ? `${lesson.questions.length} ${t.questions}` : t.noQuestions}
-                                        </div>
-                                    </div>
-                                    <span style={{ fontSize: '1.4rem', color: 'rgba(255,255,255,0.4)' }}>›</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
+                                </div>
+                                <span style={{ fontSize: '1.4rem', color: 'rgba(255,255,255,0.4)' }}>›</span>
+                            </button>
+                        );
+                    })}
+                </div>
             </FullScreen>
         );
     }

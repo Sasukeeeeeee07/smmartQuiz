@@ -12,6 +12,20 @@ import {
 const NUM_LESSONS = 9;
 const LESSON_NUMS = Array.from({ length: NUM_LESSONS }, (_, i) => i + 1);
 
+const LESSON_NAMES_EN = [
+    "Giving Up Control", "Growing Your Ambition", "Multiplying Your Present",
+    "Expanding Your Capability", "Multiplying and Expanding Your Teamwork",
+    "Know the Ambitions of Your Team", "Ambition Requires Certainty",
+    "Growing Your Ambition – 6 Year Architecture", "Growing Ambitions with Journey Partners"
+];
+
+const LESSON_NAMES_HI = [
+    "नियंत्रण छोड़ना", "अपनी महत्वाकांक्षा को बढ़ाना", "अपने वर्तमान को गुणा करना",
+    "अपनी क्षमता का विस्तार करना", "अपनी टीमवर्क को गुणा और विस्तारित करना",
+    "अपनी टीम की महत्वाकांक्षाओं को जानें", "महत्वाकांक्षा के लिए निश्चितता आवश्यक है",
+    "अपनी महत्वाकांक्षा को बढ़ाना – 6 वर्ष की संरचना", "यात्रा साथियों के साथ महत्वाकांक्षा बढ़ाना"
+];
+
 // Common language suggestions for quick-add
 const LANG_SUGGESTIONS = [
     { code: 'en', name: 'English' }, { code: 'hi', name: 'Hindi' },
@@ -100,7 +114,6 @@ function Sidebar({ activeTab, setActiveTab, onLogout, onViewQuiz }) {
     const navItems = [
         { id: 'questions', icon: '📝', label: 'Questions' },
         { id: 'languages', icon: '🌐', label: 'Languages' },
-        { id: 'lessons', icon: '📚', label: 'Lesson Names' },
         { id: 'scores', icon: '📊', label: 'Score Reports' },
         { id: 'settings', icon: '⚙️', label: 'Settings' },
     ];
@@ -350,7 +363,8 @@ function QuestionsTab({ password, languages, showToast }) {
     const [showImport, setShowImport] = useState(false);
 
     useEffect(() => {
-        getLessons(currentLang).then(names => setLessonNames(names)).catch(() => { });
+        const names = currentLang === 'hi' ? LESSON_NAMES_HI : LESSON_NAMES_EN;
+        setLessonNames(names);
     }, [currentLang]);
 
     // Sync currentLang if languages changes
@@ -483,83 +497,19 @@ function QuestionsTab({ password, languages, showToast }) {
     );
 }
 
-// ─── Lesson Names Tab ─────────────────────────────────────────────────────────
-function LessonsTab({ password, languages, showToast }) {
-    const [currentLang, setCurrentLang] = useState('en');
-    const [names, setNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        setLoading(true);
-        getLessons(currentLang)
-            .then(data => setNames(data))
-            .catch(() => setNames(LESSON_NUMS.map(n => `Lesson ${n}`)))
-            .finally(() => setLoading(false));
-    }, [currentLang]);
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            await saveLessons(password, names, currentLang);
-            showToast(`Lesson names saved for ${languages.find(l => l.code === currentLang)?.name || currentLang}!`, 'success');
-        }
-        catch (err) { showToast(err.message, 'error'); }
-        finally { setSaving(false); }
-    };
-
-    return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                    <h2 style={{ margin: '0 0 0.25rem', color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700 }}>📚 Lesson Names</h2>
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>Customize display names per language</p>
-                </div>
-                <button onClick={handleSave} disabled={saving || loading} style={S.btnPrimary}>{saving ? 'Saving...' : '💾 Save Names'}</button>
-            </div>
-
-            {/* Language Selection for Lessons */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                {languages.map(lang => (
-                    <button key={lang.code} onClick={() => setCurrentLang(lang.code)} style={{ padding: '0.45rem 1rem', borderRadius: '999px', border: '1px solid', borderColor: currentLang === lang.code ? '#a5b4fc' : 'rgba(255,255,255,0.1)', background: currentLang === lang.code ? 'rgba(99,102,241,0.2)' : 'transparent', color: currentLang === lang.code ? '#a5b4fc' : '#64748b', cursor: 'pointer', fontSize: '0.8rem' }}>
-                        {lang.name}
-                    </button>
-                ))}
-            </div>
-
-            {loading ? <div style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>Loading names...</div> : (
-                <div className="admin-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                    {LESSON_NUMS.map(num => (
-                        <div key={num} style={S.card}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `hsl(${num * 35}, 70%, 50%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>{num}</div>
-                                <label style={{ ...S.label, margin: 0, color: '#94a3b8' }}>Lesson {num} ({currentLang})</label>
-                            </div>
-                            <input value={names[num - 1] || ''} onChange={e => setNames(prev => { const n = [...prev]; n[num - 1] = e.target.value; return n; })} placeholder={`Lesson ${num} name...`} style={S.input} />
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 // ─── Scores Tab ───────────────────────────────────────────────────────────────
 function ScoresTab({ password, showToast }) {
     const [scores, setScores] = useState([]);
-    const [lessonNames, setLessonNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
+    const [lessonNames, setLessonNames] = useState(LESSON_NAMES_EN);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState({ lesson: '', email: '' });
 
     const fetchScores = useCallback(async () => {
         setLoading(true);
         try {
-            const [sData, nData] = await Promise.all([
-                getAllScores(password),
-                getLessons('en') // Baseline for reports
-            ]);
+            const sData = await getAllScores(password);
             setScores(sData);
-            setLessonNames(nData);
+            setLessonNames(LESSON_NAMES_EN); // Default for reports
         }
         catch (err) { showToast(err.message, 'error'); }
         finally { setLoading(false); }
@@ -832,7 +782,6 @@ const AdminPanel = () => {
                 <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                     {activeTab === 'questions' && <QuestionsTab {...tabProps} />}
                     {activeTab === 'languages' && <LanguagesTab {...tabProps} />}
-                    {activeTab === 'lessons' && <LessonsTab {...tabProps} />}
                     {activeTab === 'scores' && <ScoresTab {...tabProps} />}
                     {activeTab === 'settings' && <SettingsTab {...tabProps} />}
                 </div>
