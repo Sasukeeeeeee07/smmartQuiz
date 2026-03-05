@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logoImg from './logo.6712b347ef6bfbe8b880.png';
+const logoImg = '/images/logo.6712b347ef6bfbe8b880.png';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Questions are loaded from MongoDB (via Admin Panel → /admin)
@@ -384,7 +384,7 @@ export default function Quiz() {
             <!-- Header layout -->
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid transparent; padding-bottom: 24px; margin-bottom: 32px;">
                 <div style="flex: 1;">
-                    <img src="${window.location.origin}/src/pages/logo.6712b347ef6bfbe8b880.png" style="height: 48px; object-fit: contain;" alt="Smmart Logo"/>
+                    <img src="${window.location.origin}/images/logo.6712b347ef6bfbe8b880.png" style="height: 48px; object-fit: contain;" alt="Smmart Logo"/>
                 </div>
                 <div style="flex: 2; text-align: center;">
                     <h1 style="font-size: 24px; font-weight: 800; color: #111; margin: 0;">${lessonName}</h1>
@@ -479,7 +479,7 @@ export default function Quiz() {
             <FullScreen bg={PURPLE_BG} style={{ justifyContent: 'center', alignItems: 'center' }}>
                 {/* Logo top-left */}
                 <div style={{ position: 'absolute', top: '1.2rem', left: '1.5rem', zIndex: 1 }}>
-                    <img src="src/pages/logo.6712b347ef6bfbe8b880.png" alt="Logo" style={{ height: '36px', objectFit: 'contain' }} />
+                    <img src="/images/logo.6712b347ef6bfbe8b880.png" alt="Logo" style={{ height: '36px', objectFit: 'contain' }} />
                 </div>
                 {/* Centred content */}
                 <div style={{ width: '100%', maxWidth: '480px', padding: '5rem 1.75rem 2.5rem', boxSizing: 'border-box' }}>

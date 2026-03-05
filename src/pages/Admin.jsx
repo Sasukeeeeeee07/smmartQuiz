@@ -8,6 +8,8 @@ import {
     getLanguages, saveLanguages,
 } from '../api';
 
+const logoImg = '/images/logo.6712b347ef6bfbe8b880.png';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const NUM_LESSONS = 9;
 const LESSON_NUMS = Array.from({ length: NUM_LESSONS }, (_, i) => i + 1);
@@ -122,7 +124,7 @@ function Sidebar({ activeTab, setActiveTab, onLogout, onViewQuiz }) {
             <div className="admin-header" style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ fontSize: '1.5rem' }}>🧠</div>
+                        <img src={logoImg} alt="Logo" style={{ height: '24px', objectFit: 'contain' }} />
                         <div style={S.h1}>SmmartQuiz</div>
                     </div>
                     <div className="admin-sub" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Admin Dashboard</div>

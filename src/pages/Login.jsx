@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logoImg from './logo.6712b347ef6bfbe8b880.png';
+const logoImg = '/images/logo.6712b347ef6bfbe8b880.png';
 
 const API = '/api';
 
