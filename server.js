@@ -69,6 +69,7 @@ const scoreSchema = new mongoose.Schema({
     lessonId: { type: Number, required: true },
     score: { type: Number, required: true },
     totalQuestions: { type: Number, default: 10 },
+    answers: { type: Array, default: [] },
     date: { type: Date, default: Date.now }
 });
 const Score = mongoose.model('Score', scoreSchema);
@@ -81,6 +82,7 @@ const progressSchema = new mongoose.Schema({
     qIndex: { type: Number, default: 0 },
     score: { type: Number, default: 0 },
     answers: { type: Array, default: [] },
+    completed: { type: Boolean, default: false },
     updatedAt: { type: Date, default: Date.now }
 });
 progressSchema.index({ email: 1, lessonId: 1, language: 1 }, { unique: true });
@@ -95,6 +97,7 @@ const User = mongoose.model('User', userSchema);
 
 // Define Mongoose Schema & Model for Lesson Configuration
 const lessonConfigSchema = new mongoose.Schema({
+    language: { type: String, default: 'en', unique: true },
     names: {
         type: [String],
         default: [
@@ -253,7 +256,7 @@ app.post('/api/login', async (req, res) => {
 // 2. Save Score Route
 app.post('/api/scores', async (req, res) => {
     try {
-        const { email, name, language, lessonId, score } = req.body;
+        const { email, name, language, lessonId, score, totalQuestions, answers } = req.body;
 
         // Basic validation
         if (!email || !name || !language || lessonId === undefined || score === undefined) {
@@ -264,7 +267,7 @@ app.post('/api/scores', async (req, res) => {
             return res.status(503).json({ error: 'Database is not connected. Score tracking is disabled.' });
         }
 
-        const newScore = new Score({ email, name, language, lessonId, score });
+        const newScore = new Score({ email, name, language, lessonId, score, totalQuestions, answers });
         await newScore.save();
 
         res.status(201).json({ message: 'Score saved successfully!', data: newScore });
@@ -426,14 +429,14 @@ app.post('/api/admin/languages', async (req, res) => {
 // 5. Get Custom Lesson Names
 app.get('/api/lessons', async (req, res) => {
     try {
+        const { lang = 'en' } = req.query;
         if (!isDbConnected) {
-            // Return defaults if DB is down
             return res.status(200).json(["Lesson 1", "Lesson 2", "Lesson 3", "Lesson 4", "Lesson 5", "Lesson 6", "Lesson 7", "Lesson 8", "Lesson 9"]);
         }
 
-        let config = await LessonConfig.findOne();
+        let config = await LessonConfig.findOne({ language: lang });
         if (!config) {
-            config = new LessonConfig();
+            config = new LessonConfig({ language: lang });
             await config.save();
         }
         res.status(200).json(config.names);
@@ -455,14 +458,14 @@ app.post('/api/admin/lessons', async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized: Invalid Admin Password' });
         }
 
-        const { names } = req.body;
+        const { names, language = 'en' } = req.body;
         if (!Array.isArray(names) || names.length !== 9) {
             return res.status(400).json({ error: 'Must provide exactly 9 lesson names.' });
         }
 
-        let config = await LessonConfig.findOne();
+        let config = await LessonConfig.findOne({ language });
         if (!config) {
-            config = new LessonConfig();
+            config = new LessonConfig({ language });
         }
         config.names = names;
         await config.save();

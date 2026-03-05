@@ -27,8 +27,8 @@ const LANG_SUGGESTIONS = [
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const S = {
     page: { minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)', fontFamily: "'Inter', 'Segoe UI', sans-serif", color: '#e2e8f0' },
-    sidebar: { width: '260px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 10 },
-    main: { marginLeft: '260px', minHeight: '100vh', padding: '2rem' },
+    sidebar: { width: '260px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 10, overflowY: 'auto' },
+    main: { marginLeft: '260px', minHeight: '100vh', padding: '2rem', overflowX: 'hidden' },
     card: { background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', padding: '1.5rem' },
     h1: { fontSize: '1.5rem', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
     label: { fontSize: '0.813rem', fontWeight: 500, color: '#94a3b8', marginBottom: '0.4rem', display: 'block' },
@@ -106,10 +106,16 @@ function Sidebar({ activeTab, setActiveTab, onLogout, onViewQuiz }) {
     ];
     return (
         <div className="admin-sidebar" style={S.sidebar}>
-            <div className="admin-header" style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🧠</div>
-                <div style={S.h1}>SmmartQuiz</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Admin Dashboard</div>
+            <div className="admin-header" style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ fontSize: '1.5rem' }}>🧠</div>
+                        <div style={S.h1}>SmmartQuiz</div>
+                    </div>
+                    <div className="admin-sub" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Admin Dashboard</div>
+                </div>
+                {/* Mobile logout visible only via CSS toggle or just rendered here for all */}
+                <button onClick={onLogout} className="mobile-logout-btn" style={{ ...S.btnGhost, color: '#f87171', padding: '0.5rem', display: 'none' }}>Logout</button>
             </div>
             <nav className="admin-nav" style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 {navItems.map(item => (
@@ -334,13 +340,18 @@ function LanguagesTab({ password, showToast }) {
 }
 
 // ─── Questions Tab ────────────────────────────────────────────────────────────
-function QuestionsTab({ password, lessonNames, languages, showToast }) {
+function QuestionsTab({ password, languages, showToast }) {
     const [currentLesson, setCurrentLesson] = useState(1);
     const [currentLang, setCurrentLang] = useState(languages[0]?.code || 'en');
+    const [lessonNames, setLessonNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showImport, setShowImport] = useState(false);
+
+    useEffect(() => {
+        getLessons(currentLang).then(names => setLessonNames(names)).catch(() => { });
+    }, [currentLang]);
 
     // Sync currentLang if languages changes
     useEffect(() => {
@@ -391,12 +402,12 @@ function QuestionsTab({ password, lessonNames, languages, showToast }) {
         <div>
             {showImport && <ImportModal onImport={handleImport} onClose={() => setShowImport(false)} />}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
+            <div className="questions-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
                     <h2 style={{ margin: '0 0 0.25rem', color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700 }}>📝 Questions</h2>
                     <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>{questions.length} question{questions.length !== 1 ? 's' : ''} in {lessonNames[currentLesson - 1] || `Lesson ${currentLesson}`} · {languages.find(l => l.code === currentLang)?.name}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <div className="questions-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button onClick={() => setShowImport(true)} style={S.btnSecondary}>📥 Import</button>
                     <button onClick={addQuestion} style={S.btnSecondary}>+ Add</button>
                     <button onClick={handleSave} disabled={saving} style={S.btnPrimary}>{saving ? 'Saving...' : '💾 Save'}</button>
@@ -451,7 +462,7 @@ function QuestionsTab({ password, lessonNames, languages, showToast }) {
                             </div>
 
                             <label style={{ ...S.label, marginBottom: '0.75rem' }}>Options <span style={{ color: '#64748b' }}>(click a row to mark it correct)</span></label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div className="options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                                 {(q.options || ['', '', '', '']).slice(0, 4).map((opt, oIdx) => (
                                     <div key={oIdx} onClick={() => setCorrect(qIdx, oIdx)} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.75rem 1rem', borderRadius: '10px', cursor: 'pointer', border: '2px solid', borderColor: q.correctIndex === oIdx ? '#10b981' : 'rgba(255,255,255,0.1)', background: q.correctIndex === oIdx ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)' }}>
                                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid', borderColor: q.correctIndex === oIdx ? '#10b981' : 'rgba(255,255,255,0.2)', background: q.correctIndex === oIdx ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white', fontWeight: 700 }}>
@@ -473,51 +484,83 @@ function QuestionsTab({ password, lessonNames, languages, showToast }) {
 }
 
 // ─── Lesson Names Tab ─────────────────────────────────────────────────────────
-function LessonsTab({ password, lessonNames, setLessonNames, showToast }) {
-    const [names, setNames] = useState([...lessonNames]);
+function LessonsTab({ password, languages, showToast }) {
+    const [currentLang, setCurrentLang] = useState('en');
+    const [names, setNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
+    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    useEffect(() => { setNames([...lessonNames]); }, [lessonNames]);
+
+    useEffect(() => {
+        setLoading(true);
+        getLessons(currentLang)
+            .then(data => setNames(data))
+            .catch(() => setNames(LESSON_NUMS.map(n => `Lesson ${n}`)))
+            .finally(() => setLoading(false));
+    }, [currentLang]);
 
     const handleSave = async () => {
         setSaving(true);
-        try { await saveLessons(password, names); setLessonNames(names); showToast('Lesson names saved!', 'success'); }
+        try {
+            await saveLessons(password, names, currentLang);
+            showToast(`Lesson names saved for ${languages.find(l => l.code === currentLang)?.name || currentLang}!`, 'success');
+        }
         catch (err) { showToast(err.message, 'error'); }
         finally { setSaving(false); }
     };
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h2 style={{ margin: '0 0 0.25rem', color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700 }}>📚 Lesson Names</h2>
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>Customize the display names for each of the 9 lessons</p>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>Customize display names per language</p>
                 </div>
-                <button onClick={handleSave} disabled={saving} style={S.btnPrimary}>{saving ? 'Saving...' : '💾 Save Names'}</button>
+                <button onClick={handleSave} disabled={saving || loading} style={S.btnPrimary}>{saving ? 'Saving...' : '💾 Save Names'}</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {LESSON_NUMS.map(num => (
-                    <div key={num} style={S.card}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `hsl(${num * 35}, 70%, 50%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>{num}</div>
-                            <label style={{ ...S.label, margin: 0, color: '#94a3b8' }}>Lesson {num}</label>
-                        </div>
-                        <input value={names[num - 1] || ''} onChange={e => setNames(prev => { const n = [...prev]; n[num - 1] = e.target.value; return n; })} placeholder={`Lesson ${num}`} style={S.input} />
-                    </div>
+
+            {/* Language Selection for Lessons */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                {languages.map(lang => (
+                    <button key={lang.code} onClick={() => setCurrentLang(lang.code)} style={{ padding: '0.45rem 1rem', borderRadius: '999px', border: '1px solid', borderColor: currentLang === lang.code ? '#a5b4fc' : 'rgba(255,255,255,0.1)', background: currentLang === lang.code ? 'rgba(99,102,241,0.2)' : 'transparent', color: currentLang === lang.code ? '#a5b4fc' : '#64748b', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        {lang.name}
+                    </button>
                 ))}
             </div>
+
+            {loading ? <div style={{ color: '#64748b', padding: '2rem', textAlign: 'center' }}>Loading names...</div> : (
+                <div className="admin-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    {LESSON_NUMS.map(num => (
+                        <div key={num} style={S.card}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `hsl(${num * 35}, 70%, 50%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>{num}</div>
+                                <label style={{ ...S.label, margin: 0, color: '#94a3b8' }}>Lesson {num} ({currentLang})</label>
+                            </div>
+                            <input value={names[num - 1] || ''} onChange={e => setNames(prev => { const n = [...prev]; n[num - 1] = e.target.value; return n; })} placeholder={`Lesson ${num} name...`} style={S.input} />
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
 
 // ─── Scores Tab ───────────────────────────────────────────────────────────────
-function ScoresTab({ password, lessonNames, showToast }) {
+function ScoresTab({ password, showToast }) {
     const [scores, setScores] = useState([]);
+    const [lessonNames, setLessonNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState({ lesson: '', email: '' });
 
     const fetchScores = useCallback(async () => {
         setLoading(true);
-        try { const data = await getAllScores(password); setScores(data); }
+        try {
+            const [sData, nData] = await Promise.all([
+                getAllScores(password),
+                getLessons('en') // Baseline for reports
+            ]);
+            setScores(sData);
+            setLessonNames(nData);
+        }
         catch (err) { showToast(err.message, 'error'); }
         finally { setLoading(false); }
     }, [password, showToast]);
@@ -655,7 +698,6 @@ const AdminPanel = () => {
     const navigate = useNavigate();
     const [password, setPassword] = useState(() => sessionStorage.getItem('adminPass') || '');
     const [activeTab, setActiveTab] = useState('questions');
-    const [lessonNames, setLessonNames] = useState(LESSON_NUMS.map(n => `Lesson ${n}`));
     const [languages, setLanguages] = useState([]);
     const [toast, setToast] = useState(null);
 
@@ -668,7 +710,6 @@ const AdminPanel = () => {
                 sessionStorage.removeItem('adminPass');
                 setPassword('');
             });
-            getLessons().then(names => setLessonNames(names)).catch(() => { });
             getLanguages().then(langs => setLanguages(langs)).catch(() => {
                 setLanguages([{ code: 'en', name: 'English', active: true }, { code: 'hi', name: 'Hindi', active: true }]);
             });
@@ -680,7 +721,7 @@ const AdminPanel = () => {
 
     if (!password) return <LoginScreen onLogin={handleLogin} />;
 
-    const tabProps = { password, lessonNames, setLessonNames, languages, showToast };
+    const tabProps = { password, languages, showToast };
 
     return (
         <div style={S.page}>
@@ -696,47 +737,91 @@ const AdminPanel = () => {
                 /* Mobile overrides */
                 @media (max-width: 768px) {
                     .admin-sidebar {
-                        position: static !important;
+                        position: sticky !important;
+                        top: 0 !important;
                         width: 100% !important;
                         height: auto !important;
+                        bottom: auto !important;
                         border-right: none !important;
-                        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+                        border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+                        backdrop-filter: blur(30px) !important;
+                        background: rgba(15, 23, 42, 0.8) !important;
+                        z-index: 1000 !important;
                     }
                     .admin-header {
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        gap: 1rem;
-                        padding: 1rem !important;
+                        padding: 0.8rem 1rem !important;
+                        border-bottom: none !important;
                     }
-                    .admin-header > div:first-child { margin-bottom: 0 !important; }
+                    .admin-sub { display: none !important; }
                     .admin-nav {
                         flex-direction: row !important;
                         overflow-x: auto !important;
-                        padding: 0.5rem !important;
-                        gap: 0.5rem !important;
+                        padding: 0.25rem 0.75rem 0.75rem !important;
+                        gap: 0.4rem !important;
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                        -webkit-overflow-scrolling: touch;
                     }
+                    .admin-nav::-webkit-scrollbar { display: none; }
                     .tab-btn {
                         width: auto !important;
-                        white-space: nowrap;
+                        white-space: nowrap !important;
                         border-left: none !important;
-                        border-bottom: 2px solid transparent !important;
-                        border-radius: 8px !important;
-                        padding: 0.5rem 0.75rem !important;
+                        border-bottom: none !important;
+                        border-radius: 12px !important;
+                        padding: 0.6rem 0.9rem !important;
+                        flex-shrink: 0 !important;
+                        font-size: 0.75rem !important;
+                        background: rgba(255,255,255,0.05) !important;
+                        color: #94a3b8 !important;
+                        transition: all 0.2s ease !important;
                     }
                     .tab-btn.active {
-                        border-bottom: 2px solid transparent !important; /* disabled bottom border in favor of bg */
+                        background: rgba(99,102,241,0.25) !important;
+                        color: #e0e7ff !important;
+                        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+                        border: 1px solid rgba(99, 102, 241, 0.3) !important;
                     }
                     .admin-actions {
-                        flex-direction: row !important;
-                        padding: 0.5rem !important;
+                        display: none !important;
                     }
                     .admin-main {
                         margin-left: 0 !important;
                         padding: 1rem !important;
+                        padding-top: 1.5rem !important;
                     }
-                    .action-label, .tab-label {
-                        display: none; /* Hide text on mobile for compact view */
+                    .tab-label {
+                        display: inline-block !important; /* Keep text labels */
+                    }
+                    .mobile-logout-btn {
+                        display: block !important;
+                        background: rgba(239, 68, 68, 0.1) !important;
+                        border: 1px solid rgba(239, 68, 68, 0.2) !important;
+                        border-radius: 8px !important;
+                        padding: 0.4rem 0.75rem !important;
+                        font-size: 0.75rem !important;
+                        font-weight: 600 !important;
+                    }
+
+                    /* Content adjustments for mobile */
+                    .admin-card-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .questions-header {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                    }
+                    .questions-actions {
+                        width: 100%;
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 0.5rem;
+                    }
+                    .questions-actions button:last-child {
+                        grid-column: span 2;
+                    }
+                    .options-grid {
+                        grid-template-columns: 1fr !important;
                     }
                 }
             `}</style>

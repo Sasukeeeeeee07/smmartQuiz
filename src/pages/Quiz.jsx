@@ -118,11 +118,7 @@ export default function Quiz() {
 
     // ── Initial Data Fetch ──
     useEffect(() => {
-        fetch(`${API}/lessons`)
-            .then(r => r.json())
-            .then(names => { if (Array.isArray(names)) setLessonNames(names); })
-            .catch(() => { });
-
+        // We load languages first. Lesson names are now loaded per language in fetchLessons.
         fetch(`${API}/languages`)
             .then(r => r.json())
             .then(langs => { if (Array.isArray(langs) && langs.length > 0) setAvailableLanguages(langs); })
@@ -135,6 +131,11 @@ export default function Quiz() {
     const fetchLessons = useCallback(async (language, autoSelectId = null) => {
         setLoadingLessons(true);
         try {
+            // Fetch localized lesson names
+            const lRes = await fetch(`${API}/lessons?lang=${language}`);
+            const names = await lRes.json();
+            if (Array.isArray(names)) setLessonNames(names);
+
             const res = await fetch(`${API}/quiz-content/${language}`);
             const content = await res.json();
 
@@ -184,9 +185,23 @@ export default function Quiz() {
     const startLesson = async (lesson) => {
         if (lesson.questions.length === 0) return;
 
-        // Check for existing database progress
+        // Check for existing database progress OR finished score
         if (user) {
             try {
+                // 1. Check if they already finished this lesson
+                const sRes = await fetch(`${API}/scores/${user.email}`);
+                const scores = await sRes.json();
+                const existingScore = scores.find(s => s.lessonId === lesson.id && s.language === lang);
+
+                if (existingScore) {
+                    setScore(existingScore.score);
+                    setAnswers(existingScore.answers || []);
+                    setSelectedLesson(lesson);
+                    setStep('result');
+                    return; // Stop here, don't start the quiz
+                }
+
+                // 2. Check for partial progress
                 const res = await fetch(`${API}/progress/${user.email}/${lang}/${lesson.id}`);
                 const p = await res.json();
                 if (p && p.updatedAt) {
@@ -262,9 +277,10 @@ export default function Quiz() {
                             lessonId: selectedLesson.id,
                             score: newScore,
                             totalQuestions: selectedLesson.questions.length,
+                            answers: newAnswers
                         }),
                     }).then(() => {
-                        // Clear progress after completion
+                        // Clear partial progress after completion
                         fetch(`${API}/progress/${user.email}/${lang}/${selectedLesson.id}`, { method: 'DELETE' }).catch(() => { });
                     }).catch(() => { });
                 }

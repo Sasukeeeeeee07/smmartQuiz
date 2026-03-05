@@ -64,17 +64,17 @@ export const saveQuizContent = async (password, language, lessonId, questions) =
 
 // ─── Lesson Names ─────────────────────────────────────────────────────────────
 
-export const getLessons = async () => {
-    const response = await fetch(`${API_BASE}/lessons`);
+export const getLessons = async (lang = 'en') => {
+    const response = await fetch(`${API_BASE}/lessons?lang=${lang}`);
     if (!response.ok) throw new Error('Failed to fetch lessons');
     return response.json();
 };
 
-export const saveLessons = async (password, names) => {
+export const saveLessons = async (password, names, language = 'en') => {
     const response = await fetch(`${API_BASE}/admin/lessons?password=${password}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ names }),
+        body: JSON.stringify({ names, language }),
     });
     if (!response.ok) {
         const err = await response.json();
