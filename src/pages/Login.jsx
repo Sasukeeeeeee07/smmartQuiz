@@ -96,7 +96,7 @@ export default function Login() {
                     <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '24px', padding: '2rem', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
                         {/* Tabs */}
                         <div style={{ display: 'flex', background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: '4px', marginBottom: '1.75rem' }}>
-                            <button className="tab-btn" onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, background: mode === 'login' ? 'rgba(99,102,241,0.5)' : 'transparent', color: mode === 'login' ? '#f1f5f9' : '#64748b' }}>Sign In</button>
+                            <button className="tab-btn" onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, background: mode === 'login' ? 'rgba(99,102,241,0.5)' : 'transparent', color: mode === 'login' ? '#f1f5f9' : '#64748b' }}>Log In</button>
                             <button className="tab-btn" onClick={() => { setMode('register'); setError(''); }} style={{ flex: 1, background: mode === 'register' ? 'rgba(99,102,241,0.5)' : 'transparent', color: mode === 'register' ? '#f1f5f9' : '#64748b' }}>Sign Up</button>
                         </div>
 
