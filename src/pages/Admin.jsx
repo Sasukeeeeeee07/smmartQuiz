@@ -674,7 +674,7 @@ const AdminPanel = () => {
     if (!password) return <LoginScreen onLogin={handleLogin} />;
 
     const tabProps = { password, languages, showToast };
-
+    //xfghdgsf
     return (
         <div style={S.page}>
             <style>{`
