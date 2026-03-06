@@ -504,7 +504,7 @@ function ScoresTab({ password, showToast }) {
     const [scores, setScores] = useState([]);
     const [lessonNames, setLessonNames] = useState(LESSON_NAMES_EN);
     const [loading, setLoading] = useState(false);
-    const [filter, setFilter] = useState({ lesson: '', email: '' });
+    const [filter, setFilter] = useState({ lesson: '', email: '', attempt: '' });
 
     const fetchScores = useCallback(async () => {
         setLoading(true);
@@ -519,9 +519,17 @@ function ScoresTab({ password, showToast }) {
 
     useEffect(() => { fetchScores(); }, [fetchScores]);
 
-    const filtered = scores.filter(s => {
+    // Calculate attempt numbers FIRST based on all scores (oldest to newest for accurate counting)
+    const scoresWithAttempt = [...scores].reverse().map((s, i, arr) => {
+        const previousAttempts = arr.slice(0, i).filter(prev => prev.email === s.email && prev.lessonId === s.lessonId).length;
+        return { ...s, attemptNum: previousAttempts + 1 };
+    }).reverse();
+
+    // THEN filter the results based on search criteria
+    const processedScores = scoresWithAttempt.filter(s => {
         if (filter.lesson && s.lessonId !== Number(filter.lesson)) return false;
         if (filter.email && !s.email.toLowerCase().includes(filter.email.toLowerCase())) return false;
+        if (filter.attempt && String(s.attemptNum) !== String(filter.attempt)) return false;
         return true;
     });
 
@@ -533,12 +541,12 @@ function ScoresTab({ password, showToast }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h2 style={{ margin: '0 0 0.25rem', color: '#f1f5f9', fontSize: '1.5rem', fontWeight: 700 }}>📊 Score Reports</h2>
-                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>{scores.length} total attempts</p>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>{scores.length} total tests taken</p>
                 </div>
                 <button onClick={fetchScores} style={S.btnSecondary}>🔄 Refresh</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-                {[{ label: 'Total Attempts', value: scores.length, icon: '🎯' }, { label: 'Unique Users', value: totalUnique, icon: '👥' }, { label: 'Average Score', value: avgScore, icon: '📈' }].map((stat, i) => (
+                {[{ label: 'Total Tests Taken', value: scores.length, icon: '🎯' }, { label: 'Unique Users', value: totalUnique, icon: '👥' }, { label: 'Average Score', value: avgScore, icon: '📈' }].map((stat, i) => (
                     <div key={i} style={{ ...S.card, textAlign: 'center' }}>
                         <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{stat.icon}</div>
                         <div style={{ fontSize: '2rem', fontWeight: 800, color: '#a5b4fc' }}>{stat.value}</div>
@@ -547,18 +555,22 @@ function ScoresTab({ password, showToast }) {
                 ))}
             </div>
             <div style={{ ...S.card, display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ flex: 1, minWidth: '150px' }}>
                     <label style={S.label}>Filter by Lesson</label>
                     <select value={filter.lesson} onChange={e => setFilter(f => ({ ...f, lesson: e.target.value }))} style={{ ...S.input }}>
                         <option value="">All Lessons</option>
                         {LESSON_NUMS.map(n => <option key={n} value={n}>{lessonNames[n - 1] || `Lesson ${n}`}</option>)}
                     </select>
                 </div>
-                <div style={{ flex: 1, minWidth: '200px' }}>
+                <div style={{ flex: 1, minWidth: '150px' }}>
                     <label style={S.label}>Filter by Email</label>
                     <input value={filter.email} onChange={e => setFilter(f => ({ ...f, email: e.target.value }))} placeholder="Search email..." style={S.input} />
                 </div>
-                {(filter.lesson || filter.email) && <div style={{ display: 'flex', alignItems: 'flex-end' }}><button onClick={() => setFilter({ lesson: '', email: '' })} style={S.btnGhost}>Clear</button></div>}
+                <div style={{ flex: 1, minWidth: '100px' }}>
+                    <label style={S.label}>Filter by Attempt #</label>
+                    <input type="number" min="1" value={filter.attempt} onChange={e => setFilter(f => ({ ...f, attempt: e.target.value }))} placeholder="E.g. 1" style={S.input} />
+                </div>
+                {(filter.lesson || filter.email || filter.attempt) && <div style={{ display: 'flex', alignItems: 'flex-end' }}><button onClick={() => setFilter({ lesson: '', email: '', attempt: '' })} style={S.btnGhost}>Clear</button></div>}
             </div>
             {loading ? <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading scores...</div> : (
                 <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
@@ -566,18 +578,19 @@ function ScoresTab({ password, showToast }) {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                             <thead>
                                 <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                    {['Name', 'Email', 'Lesson', 'Language', 'Score', 'Date'].map(h => (
+                                    {['Name', 'Email', 'Lesson', 'Language', 'Attempt #', 'Score', 'Date'].map(h => (
                                         <th key={h} style={{ padding: '0.9rem 1.25rem', textAlign: 'left', fontWeight: 600, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.length === 0 ? <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No results</td></tr> : filtered.map((s, i) => (
+                                {processedScores.length === 0 ? <tr><td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No results</td></tr> : processedScores.map((s, i) => (
                                     <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                         <td style={{ padding: '0.8rem 1.25rem', color: '#f1f5f9', fontWeight: 500 }}>{s.name}</td>
                                         <td style={{ padding: '0.8rem 1.25rem', color: '#94a3b8' }}>{s.email}</td>
                                         <td style={{ padding: '0.8rem 1.25rem', color: '#a5b4fc' }}>{lessonNames[s.lessonId - 1] || `Lesson ${s.lessonId}`}</td>
                                         <td style={{ padding: '0.8rem 1.25rem' }}><span style={S.badge('purple')}>{s.language?.toUpperCase()}</span></td>
+                                        <td style={{ padding: '0.8rem 1.25rem', color: '#cbd5e1', fontWeight: 600 }}>#{s.attemptNum}</td>
                                         <td style={{ padding: '0.8rem 1.25rem' }}><span style={S.badge(s.score >= 7 ? 'green' : 'red')}>{s.score}/{s.totalQuestions || 10}</span></td>
                                         <td style={{ padding: '0.8rem 1.25rem', color: '#64748b', fontSize: '0.8rem' }}>{new Date(s.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                                     </tr>
@@ -585,7 +598,7 @@ function ScoresTab({ password, showToast }) {
                             </tbody>
                         </table>
                     </div>
-                    {filtered.length > 0 && <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: '0.8rem' }}>Showing {filtered.length} of {scores.length} records</div>}
+                    {processedScores.length > 0 && <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.08)', color: '#64748b', fontSize: '0.8rem' }}>Showing {processedScores.length} of {scores.length} records</div>}
                 </div>
             )}
         </div>
@@ -610,7 +623,6 @@ function SettingsTab({ password, showToast }) {
             if (isPasswordChanging) {
                 showToast('Password changed! Please login again.', 'success');
                 setTimeout(() => {
-                    sessionStorage.removeItem('adminPass');
                     window.location.reload();
                 }, 2000);
             } else {
@@ -648,7 +660,7 @@ function SettingsTab({ password, showToast }) {
 // ─── Main Admin Panel ─────────────────────────────────────────────────────────
 const AdminPanel = () => {
     const navigate = useNavigate();
-    const [password, setPassword] = useState(() => sessionStorage.getItem('adminPass') || '');
+    const [password, setPassword] = useState('');
     const [activeTab, setActiveTab] = useState('questions');
     const [languages, setLanguages] = useState([]);
     const [toast, setToast] = useState(null);
@@ -659,7 +671,6 @@ const AdminPanel = () => {
         if (password) {
             // Verify password actually works by attempting a protected fetch
             getAllScores(password).catch(() => {
-                sessionStorage.removeItem('adminPass');
                 setPassword('');
             });
             getLanguages().then(langs => setLanguages(langs)).catch(() => {
@@ -668,8 +679,8 @@ const AdminPanel = () => {
         }
     }, [password]);
 
-    const handleLogin = (pass) => { sessionStorage.setItem('adminPass', pass); setPassword(pass); };
-    const handleLogout = () => { sessionStorage.removeItem('adminPass'); setPassword(''); };
+    const handleLogin = (pass) => { setPassword(pass); };
+    const handleLogout = () => { setPassword(''); };
 
     if (!password) return <LoginScreen onLogin={handleLogin} />;
 

@@ -95,6 +95,25 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
+// Define OTP Schema for Password Reset
+const otpSchema = new mongoose.Schema({
+    email: { type: String, required: true },
+    otp: { type: String, required: true },
+    expiresAt: { type: Date, required: true }
+});
+otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+const Otp = mongoose.model('Otp', otpSchema);
+
+// Setup Nodemailer logic
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.SMTP_USER || 'your-email@gmail.com', // To be set in .env
+        pass: process.env.SMTP_PASS || 'your-app-password'     // To be set in .env
+    }
+});
+
 // Define Mongoose Schema & Model for Lesson Configuration
 const lessonConfigSchema = new mongoose.Schema({
     language: { type: String, default: 'en', unique: true },
@@ -249,6 +268,101 @@ app.post('/api/login', async (req, res) => {
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// 2b. Forgot Password - Send OTP
+app.post('/api/forgot-password', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected.' });
+
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            // To prevent email enumeration, we might still pretend we sent it, but here we return standard response for ease
+            return res.status(404).json({ error: 'No account found with this email.' });
+        }
+
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // Set expiry for 15 minutes
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        // Overwrite existing OTP for this user if it exists
+        await Otp.deleteMany({ email });
+        await new Otp({ email, otp, expiresAt }).save();
+
+        if (process.env.SMTP_USER) {
+            await transporter.sendMail({
+                from: process.env.SMTP_USER,
+                to: email,
+                subject: 'Your Password Reset Code',
+                text: `Your password reset code is: ${otp}. It expires in 15 minutes.`,
+                html: `<p>Your password reset code is: <strong>${otp}</strong>. It expires in 15 minutes.</p>`
+            });
+            console.log(`OTP sent to ${email} via email.`);
+        } else {
+            console.log(`[DEV MODE] OTP for ${email}: ${otp}`); // Logs for developer if not configured
+        }
+
+        res.status(200).json({ message: 'A reset code has been sent to your email.' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Failed to process request.' });
+    }
+});
+
+// 2c. Verify OTP
+app.post('/api/verify-otp', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected.' });
+
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required.' });
+
+        const validOtp = await Otp.findOne({ email, otp });
+        if (!validOtp) {
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        }
+
+        res.status(200).json({ message: 'OTP verified successfully.' });
+    } catch (error) {
+        console.error('OTP verify error:', error);
+        res.status(500).json({ error: 'Failed to verify OTP.' });
+    }
+});
+
+// 2d. Reset Password
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        if (!isDbConnected) return res.status(503).json({ error: 'Database disconnected.' });
+
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) return res.status(400).json({ error: 'Missing required fields.' });
+
+        if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+
+        // Double check OTP
+        const validOtp = await Otp.findOne({ email, otp });
+        if (!validOtp) {
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+
+        user.password = newPassword;
+        await user.save();
+
+        // Clear the OTP
+        await Otp.deleteMany({ email });
+
+        res.status(200).json({ message: 'Password reset successfully. You can now log in.' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Failed to reset password.' });
     }
 });
 

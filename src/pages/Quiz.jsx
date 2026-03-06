@@ -206,18 +206,9 @@ export default function Quiz() {
         // Check for existing database progress OR finished score
         if (user) {
             try {
-                // 1. Check if they already finished this lesson
-                const sRes = await fetch(`${API}/scores/${user.email}`);
-                const scores = await sRes.json();
-                const existingScore = scores.find(s => s.lessonId === lesson.id && s.language === lang);
-
-                if (existingScore) {
-                    setScore(existingScore.score);
-                    setAnswers(existingScore.answers || []);
-                    setSelectedLesson(lesson);
-                    setStep('result');
-                    return; // Stop here, don't start the quiz
-                }
+                // 1. Remove the existingScore block that prevents taking it again.
+                // We'll still check for partial progress so they can resume interrupted quizzes,
+                // but if they already have a score, they can still retake it (it will just save a NEW score row).
 
                 // 2. Check for partial progress
                 const res = await fetch(`${API}/progress/${user.email}/${lang}/${lesson.id}`);
